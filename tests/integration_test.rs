@@ -1,7 +1,11 @@
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, KeyEventKind};
 use std::sync::{Arc, Mutex};
+
+use rust_terminal_notepad::initialize_text_buffer;
 
 // event::read mock structure
 struct MockEventReader {
@@ -363,6 +367,135 @@ fn test_multiline_input() -> std::io::Result<()> {
 
     let mut mock_reader = MockEventReader::new(events);
     let inserted_text = Arc::new(Mutex::new(String::new()));
+
+    loop {
+        match mock_reader.read()? {
+            Event::Key(key_event) => {
+                if key_event.kind != KeyEventKind::Release {
+                    match key_event {
+                        event if event.code == KeyCode::Char('c')
+                            && event.modifiers == KeyModifiers::CONTROL => {
+                            let text = inserted_text.lock().unwrap();
+                            fs::write(test_file, &*text)?;
+                            break;
+                        }
+                        event if event.code == KeyCode::Enter => {
+                            let mut text = inserted_text.lock().unwrap();
+                            text.push('\n');
+                        }
+                        event => {
+                            if let KeyCode::Char(c) = event.code {
+                                let mut text = inserted_text.lock().unwrap();
+                                text.push(c);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Checking the results
+    assert!(Path::new(test_file).exists(), "The file has not been created");
+    let saved_content = fs::read_to_string(test_file)?;
+    assert_eq!(saved_content, expected_content, "The file content does not match the expected content");
+
+    // Cleaning
+    fs::remove_file(test_file)?;
+
+    Ok(())
+}
+
+
+#[test]
+fn test_read_file() -> std::io::Result<()> {
+    let test_file = "test_read_file.txt";
+    let mut file = File::create(test_file)?;
+    let expected_content = "Here is some text!\nNew Line 1";
+    let some_input_text =b"Here is some text!";
+    file.write_all(some_input_text)?;
+
+    let (inserted_text, cursor_position) = initialize_text_buffer(&test_file)?;
+
+    assert_eq!(cursor_position,(some_input_text.len() as u16,0),"Cursor position calculated incorrectly");
+
+    let events = vec![
+        Event::Key(KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('N'),
+            modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('e'),
+            modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('w'),
+            modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char(' '),
+            modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('L'),
+            modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('i'),
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('e'),
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char(' '),
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('1'),
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+        Event::Key(KeyEvent {
+            code: KeyCode::Char('c'),
+            modifiers: KeyModifiers::CONTROL,
+            kind: KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        }),
+    ];
+
+    let mut mock_reader = MockEventReader::new(events);
 
     loop {
         match mock_reader.read()? {
