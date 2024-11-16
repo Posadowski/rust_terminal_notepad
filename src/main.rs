@@ -49,7 +49,16 @@ fn main() -> std::io::Result<()>{
                         modifiers: KeyModifiers::NONE,
                         ..
                     } => {
-                        println!("Get char");
+                        let mut text = inserted_text.lock().unwrap();
+                        text.push(c);
+                        cursor_position.0 += 1;
+                    }
+
+                    event::KeyEvent {
+                        code: KeyCode::Char(c),
+                        modifiers: KeyModifiers::SHIFT,
+                        ..
+                    } => {
                         let mut text = inserted_text.lock().unwrap();
                         text.push(c);
                         cursor_position.0 += 1;
@@ -59,7 +68,6 @@ fn main() -> std::io::Result<()>{
                         code: KeyCode::Backspace,
                         ..
                     } => {
-                        println!("Get backspace");
                         let mut text = inserted_text.lock().unwrap();
                         if !text.is_empty() {
                             text.pop();
@@ -73,7 +81,6 @@ fn main() -> std::io::Result<()>{
                         code: KeyCode::Enter,
                         ..
                     } => {
-                        println!("Get eneter");
                         let mut text = inserted_text.lock().unwrap();
                         text.push('\n');
                         cursor_position.0 = 0;
@@ -84,7 +91,6 @@ fn main() -> std::io::Result<()>{
                         code: KeyCode::Esc,
                         ..
                     } => {
-                        println!("Get esc");
                         break;
                     }
                     event::KeyEvent {
@@ -92,10 +98,9 @@ fn main() -> std::io::Result<()>{
                         modifiers: KeyModifiers::CONTROL,
                         ..
                     } => {
-                        println!("Get ctrl+c");
                         let text = inserted_text.lock().unwrap();
-                        let mut filr = File::create(&file_name)?;
-                        filr.write_all(text.as_bytes())?;
+                        let mut file = File::create(&file_name)?;
+                        file.write_all(text.as_bytes())?;
                         break;
                     }
 
