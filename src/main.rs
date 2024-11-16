@@ -1,17 +1,17 @@
-use std::fs::File;
-use std::io::{Write};
 use rust_terminal_notepad::initialize_text_buffer;
+use std::fs::File;
+use std::io::Write;
 
+use crossterm::event::KeyEventKind;
 use crossterm::{
     cursor,
-    event::{self, Event, KeyCode,KeyModifiers},
+    event::{self, Event, KeyCode, KeyModifiers},
     execute,
-    style::{Print},
+    style::Print,
     terminal::{self},
 };
-use crossterm::event::KeyEventKind;
 
-fn main() -> std::io::Result<()>{
+fn main() -> std::io::Result<()> {
     let file_name;
     if std::env::args().count() < 2 {
         file_name = "untitled.txt".to_string();
@@ -28,9 +28,9 @@ fn main() -> std::io::Result<()>{
     let (inserted_text, mut cursor_position) = initialize_text_buffer(&file_name)?;
 
     loop {
-
         // clear screen and show buffer
-        { // put it in a separate scope to free up the mutex on the inserted_text variable
+        {
+            // put it in a separate scope to free up the mutex on the inserted_text variable
             let text = inserted_text.lock().unwrap();
             execute!(
                 stdout,
@@ -41,7 +41,8 @@ fn main() -> std::io::Result<()>{
             )?;
         }
         if let Event::Key(key_event) = event::read()? {
-            if key_event.kind != KeyEventKind::Release { // skip releasing the button
+            if key_event.kind != KeyEventKind::Release {
+                // skip releasing the button
                 match key_event {
                     event::KeyEvent {
                         code: KeyCode::Char(c),
@@ -87,8 +88,7 @@ fn main() -> std::io::Result<()>{
                     }
 
                     event::KeyEvent {
-                        code: KeyCode::Esc,
-                        ..
+                        code: KeyCode::Esc, ..
                     } => {
                         break;
                     }

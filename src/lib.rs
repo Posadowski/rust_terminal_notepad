@@ -1,9 +1,11 @@
 use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use std::io::Read;
 
-pub fn initialize_text_buffer(file_name: &str) -> std::io::Result<(Arc<Mutex<String>>, (u16, u16))> {
+pub fn initialize_text_buffer(
+    file_name: &str,
+) -> std::io::Result<(Arc<Mutex<String>>, (u16, u16))> {
     // Load existing file content if it exists
     let initial_content = if Path::new(file_name).exists() {
         let mut file = File::open(file_name)?;

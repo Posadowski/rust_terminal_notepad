@@ -1,8 +1,8 @@
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers, KeyEventKind};
 use std::sync::{Arc, Mutex};
 
 use rust_terminal_notepad::initialize_text_buffer;
@@ -15,10 +15,7 @@ struct MockEventReader {
 
 impl MockEventReader {
     fn new(events: Vec<Event>) -> Self {
-        MockEventReader {
-            events,
-            current: 0,
-        }
+        MockEventReader { events, current: 0 }
     }
 
     fn read(&mut self) -> std::io::Result<Event> {
@@ -27,7 +24,7 @@ impl MockEventReader {
             self.current += 1;
             Ok(event)
         } else {
-            Ok(Event::Key(KeyEvent{
+            Ok(Event::Key(KeyEvent {
                 code: KeyCode::Esc,
                 modifiers: KeyModifiers::NONE,
                 kind: KeyEventKind::Press,
@@ -45,86 +42,86 @@ fn test_basic_text_input() -> std::io::Result<()> {
     // Preparing a sequence of events
     let events = vec![
         // Simulation of typing "Hello, World!"
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('H'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('e'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('o'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char(','),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char(' '),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('W'),
             modifiers: KeyModifiers::SHIFT,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('o'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('r'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('d'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('!'),
             modifiers: KeyModifiers::SHIFT,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
         // Save and exit
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('c'),
             modifiers: KeyModifiers::CONTROL,
             kind: KeyEventKind::Press,
@@ -142,8 +139,10 @@ fn test_basic_text_input() -> std::io::Result<()> {
             Event::Key(key_event) => {
                 if key_event.kind != KeyEventKind::Release {
                     match key_event {
-                        event if event.code == KeyCode::Char('c')
-                            && event.modifiers == KeyModifiers::CONTROL => {
+                        event
+                            if event.code == KeyCode::Char('c')
+                                && event.modifiers == KeyModifiers::CONTROL =>
+                        {
                             let text = inserted_text.lock().unwrap();
                             fs::write(test_file, &*text)?;
                             break;
@@ -165,9 +164,15 @@ fn test_basic_text_input() -> std::io::Result<()> {
     }
 
     // Checking the results
-    assert!(Path::new(test_file).exists(), "The file has not been created");
+    assert!(
+        Path::new(test_file).exists(),
+        "The file has not been created"
+    );
     let saved_content = fs::read_to_string(test_file)?;
-    assert_eq!(saved_content, test_content, "The file content does not match the expected content");
+    assert_eq!(
+        saved_content, test_content,
+        "The file content does not match the expected content"
+    );
 
     // Cleaning
     fs::remove_file(test_file)?;
@@ -181,49 +186,49 @@ fn test_backspace() -> std::io::Result<()> {
     let expected_content = "Hello";
 
     let events = vec![
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('H'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('e'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('l'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('o'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('!'),
             modifiers: KeyModifiers::SHIFT,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Backspace,
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('c'),
             modifiers: KeyModifiers::CONTROL,
             kind: KeyEventKind::Press,
@@ -239,8 +244,10 @@ fn test_backspace() -> std::io::Result<()> {
             Event::Key(key_event) => {
                 if key_event.kind != KeyEventKind::Release {
                     match key_event {
-                        event if event.code == KeyCode::Char('c')
-                            && event.modifiers == KeyModifiers::CONTROL => {
+                        event
+                            if event.code == KeyCode::Char('c')
+                                && event.modifiers == KeyModifiers::CONTROL =>
+                        {
                             let text = inserted_text.lock().unwrap();
                             fs::write(test_file, &*text)?;
                             break;
@@ -263,9 +270,15 @@ fn test_backspace() -> std::io::Result<()> {
     }
 
     // Checking the results
-    assert!(Path::new(test_file).exists(), "The file has not been created");
+    assert!(
+        Path::new(test_file).exists(),
+        "The file has not been created"
+    );
     let saved_content = fs::read_to_string(test_file)?;
-    assert_eq!(saved_content, expected_content, "The file content does not match the expected content");
+    assert_eq!(
+        saved_content, expected_content,
+        "The file content does not match the expected content"
+    );
 
     // Cleaning
     fs::remove_file(test_file)?;
@@ -279,85 +292,85 @@ fn test_multiline_input() -> std::io::Result<()> {
     let expected_content = "Line 1\nLine 2";
 
     let events = vec![
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('L'),
             modifiers: KeyModifiers::SHIFT,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('i'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('n'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('e'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char(' '),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('1'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Enter,
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('L'),
             modifiers: KeyModifiers::SHIFT,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('i'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('n'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('e'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char(' '),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('2'),
             modifiers: KeyModifiers::NONE,
             kind: KeyEventKind::Press,
             state: crossterm::event::KeyEventState::NONE,
         }),
-        Event::Key(KeyEvent{
+        Event::Key(KeyEvent {
             code: KeyCode::Char('c'),
             modifiers: KeyModifiers::CONTROL,
             kind: KeyEventKind::Press,
@@ -373,8 +386,10 @@ fn test_multiline_input() -> std::io::Result<()> {
             Event::Key(key_event) => {
                 if key_event.kind != KeyEventKind::Release {
                     match key_event {
-                        event if event.code == KeyCode::Char('c')
-                            && event.modifiers == KeyModifiers::CONTROL => {
+                        event
+                            if event.code == KeyCode::Char('c')
+                                && event.modifiers == KeyModifiers::CONTROL =>
+                        {
                             let text = inserted_text.lock().unwrap();
                             fs::write(test_file, &*text)?;
                             break;
@@ -397,9 +412,15 @@ fn test_multiline_input() -> std::io::Result<()> {
     }
 
     // Checking the results
-    assert!(Path::new(test_file).exists(), "The file has not been created");
+    assert!(
+        Path::new(test_file).exists(),
+        "The file has not been created"
+    );
     let saved_content = fs::read_to_string(test_file)?;
-    assert_eq!(saved_content, expected_content, "The file content does not match the expected content");
+    assert_eq!(
+        saved_content, expected_content,
+        "The file content does not match the expected content"
+    );
 
     // Cleaning
     fs::remove_file(test_file)?;
@@ -407,18 +428,21 @@ fn test_multiline_input() -> std::io::Result<()> {
     Ok(())
 }
 
-
 #[test]
 fn test_read_file() -> std::io::Result<()> {
     let test_file = "test_read_file.txt";
     let mut file = File::create(test_file)?;
     let expected_content = "Here is some text!\nNew Line 1";
-    let some_input_text =b"Here is some text!";
+    let some_input_text = b"Here is some text!";
     file.write_all(some_input_text)?;
 
     let (inserted_text, cursor_position) = initialize_text_buffer(&test_file)?;
 
-    assert_eq!(cursor_position,(some_input_text.len() as u16,0),"Cursor position calculated incorrectly");
+    assert_eq!(
+        cursor_position,
+        (some_input_text.len() as u16, 0),
+        "Cursor position calculated incorrectly"
+    );
 
     let events = vec![
         Event::Key(KeyEvent {
@@ -502,8 +526,10 @@ fn test_read_file() -> std::io::Result<()> {
             Event::Key(key_event) => {
                 if key_event.kind != KeyEventKind::Release {
                     match key_event {
-                        event if event.code == KeyCode::Char('c')
-                            && event.modifiers == KeyModifiers::CONTROL => {
+                        event
+                            if event.code == KeyCode::Char('c')
+                                && event.modifiers == KeyModifiers::CONTROL =>
+                        {
                             let text = inserted_text.lock().unwrap();
                             fs::write(test_file, &*text)?;
                             break;
@@ -526,9 +552,15 @@ fn test_read_file() -> std::io::Result<()> {
     }
 
     // Checking the results
-    assert!(Path::new(test_file).exists(), "The file has not been created");
+    assert!(
+        Path::new(test_file).exists(),
+        "The file has not been created"
+    );
     let saved_content = fs::read_to_string(test_file)?;
-    assert_eq!(saved_content, expected_content, "The file content does not match the expected content");
+    assert_eq!(
+        saved_content, expected_content,
+        "The file content does not match the expected content"
+    );
 
     // Cleaning
     fs::remove_file(test_file)?;
