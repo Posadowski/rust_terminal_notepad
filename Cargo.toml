@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 ctrlc = "3.2"
 crossterm = "0.28.1"
+
+
+[dev-dependencies]
+mockall = "0.13.0"
