@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::io::Write;
-use std::sync::{Arc, Mutex};
+use std::io::{Write};
+use rust_terminal_notepad::initialize_text_buffer;
 
 use crossterm::{
     cursor,
@@ -24,9 +24,8 @@ fn main() -> std::io::Result<()>{
     terminal::enable_raw_mode()?;
     execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
 
-    // Variable to store all input from user
-    let inserted_text = Arc::new(Mutex::new(String::new())); // user text buffer
-    let mut cursor_position = (0,0);
+    // Initialize text buffer and cursor position
+    let (inserted_text, mut cursor_position) = initialize_text_buffer(&file_name)?;
 
     loop {
 
