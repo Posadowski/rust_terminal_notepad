@@ -1,6 +1,11 @@
 use rust_terminal_notepad::initialize_text_buffer;
-use std::fs::File;
-use std::io::Write;
+use std::{
+    fs::File,
+    io::Write,
+    sync::mpsc,
+    thread,
+    time::Duration,
+};
 
 use crossterm::event::KeyEventKind;
 use crossterm::{
@@ -27,6 +32,17 @@ fn main() -> std::io::Result<()> {
     // Initialize text buffer and cursor position
     let (inserted_text, mut cursor_position) = initialize_text_buffer(&file_name)?;
 
+    let mut show_cursor = true;
+
+    // Setup communication channel for blinking cursor
+    let (tx, rx) = mpsc::channel();
+
+    // Start a thread for blinking the cursor
+    let _blink_thread = thread::spawn(move || loop {
+        tx.send(()).unwrap();
+        thread::sleep(Duration::from_millis(500));
+    });
+
     loop {
         // clear screen and show buffer
         {
@@ -39,7 +55,17 @@ fn main() -> std::io::Result<()> {
                 Print(&*text),
                 cursor::MoveTo(cursor_position.0, cursor_position.1),
             )?;
+            if show_cursor {
+                execute!(stdout, cursor::Show)?;
+            } else {
+                execute!(stdout, cursor::Hide)?;
+            }
         }
+
+        if let Ok(_) = rx.try_recv() {
+            show_cursor = !show_cursor;
+        }
+
         if let Event::Key(key_event) = event::read()? {
             if key_event.kind != KeyEventKind::Release {
                 // skip releasing the button
@@ -73,6 +99,12 @@ fn main() -> std::io::Result<()> {
                             text.pop();
                             if cursor_position.0 > 0 {
                                 cursor_position.0 -= 1;
+                            } else if  cursor_position.1 > 0 {
+                                let lines: Vec<&str> = text.split('\n').collect();
+                                if let Some(prev_line) = lines.get(cursor_position.1 as usize - 1) {
+                                    cursor_position.1 -= 1;
+                                    cursor_position.0 = prev_line.len() as u16; // Set cursor to the end of the previous line
+                                }
                             }
                         }
                     }
