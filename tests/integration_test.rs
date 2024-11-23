@@ -567,3 +567,61 @@ fn test_read_file() -> std::io::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_position_to_index() {
+    use rust_terminal_notepad::position_to_index;;
+    let text = "some string\nsome line";
+
+    // First Line Position Test
+    assert_eq!(position_to_index(text, (0, 0)), 0);  // Beginning of the text
+    assert_eq!(position_to_index(text, (5, 0)), 5);  // Position ' ' in "some "
+    assert_eq!(position_to_index(text, (11, 0)), 11); // Position '\n'
+
+    // Second Line Position Test
+    assert_eq!(position_to_index(text, (0, 1)), 12);  // Beginning "some line"
+    assert_eq!(position_to_index(text, (4, 1)), 16);  // Position 'l' w "line"
+    assert_eq!(position_to_index(text, (9, 1)), 21);  // At the end of the second line
+
+    // Test out of range (should return end of text)
+    assert_eq!(position_to_index(text, (15, 1)), 21); // Beyond the length of the second line
+    assert_eq!(position_to_index(text, (0, 2)), 21);  // Beyond the number of lines
+}
+
+#[test]
+fn test_line_length() {
+    use rust_terminal_notepad::line_length;
+    let text = "some string\nsome line";
+
+    // line lenght test
+    assert_eq!(line_length(text, 0), 11);  //  "some string"
+    assert_eq!(line_length(text, 1), 9);   //  "some line"
+
+    // empty line test
+    let text_with_empty_line = "some string\nsome line\n";
+    assert_eq!(line_length(text_with_empty_line, 2), 0); // empty line
+
+    // Test out of range (should return 0)
+    assert_eq!(line_length(text, 2), 0);  // No line 2
+}
+
+#[test]
+fn test_total_lines() {
+    use rust_terminal_notepad::total_lines;
+    let text = "some string\nsome line";
+
+    // Two lines test
+    assert_eq!(total_lines(text), 2);
+
+    // three line test
+    let text_with_empty_line = "some string\nsome line\n";
+    assert_eq!(total_lines(text_with_empty_line), 3);
+
+    // one line test
+    let single_line_text = "just one line";
+    assert_eq!(total_lines(single_line_text), 1);
+
+    // empty text test
+    let empty_text = "";
+    assert_eq!(total_lines(empty_text), 1); // One blank line
+}
