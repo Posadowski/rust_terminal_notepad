@@ -5,7 +5,7 @@ A terminal-based text editor written in Rust, using the `crossterm` crate for ha
 ## Features
 
 - Insert text interactively in the terminal.
-- Use arrow keys to navigate. **WiP**
+- Use arrow keys to navigate.
 - Save your text to a file by pressing `Ctrl+C`.
 - Exit the program by pressing `Esc`.
 
