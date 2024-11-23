@@ -28,3 +28,45 @@ pub fn initialize_text_buffer(
 
     Ok((inserted_text, cursor_position))
 }
+
+
+/// Calculates the index into `Vec<char>` based on the cursor position (x, y).
+pub fn  position_to_index(text: &str, cursor: (u16, u16)) -> usize {
+    let (x, y) = cursor;
+    let mut line = 0;
+    let mut index = 0;
+
+    for (_i, ch) in text.chars().enumerate() {
+        if line == y {
+            return index + x as usize;
+        }
+        index += ch.len_utf8(); // Jump over the appropriate length of the sign
+        if ch == '\n' {
+            line += 1;
+        }
+    }
+    index // By default it returns the end of text
+}
+
+/// Calculates the length of a line from `y`.
+pub fn line_length(text: &str, y: usize) -> u16 {
+    let mut line = 0;
+    let mut length = 0;
+
+    for ch in text.chars() {
+        if line == y {
+            if ch == '\n' {
+                break;
+            }
+            length += 1;
+        } else if ch == '\n' {
+            line += 1;
+        }
+    }
+    length
+}
+
+/// Calculates the entire line area of text.
+pub fn total_lines(text: &str) -> usize {
+    text.chars().filter(|&ch| ch == '\n').count() + 1
+}

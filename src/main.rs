@@ -1,4 +1,5 @@
-use rust_terminal_notepad::initialize_text_buffer;
+mod lib;
+
 use std::{
     fs::File,
     io::Write,
@@ -30,7 +31,7 @@ fn main() -> std::io::Result<()> {
     execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
 
     // Initialize text buffer and cursor position
-    let (inserted_text, mut cursor_position) = initialize_text_buffer(&file_name)?;
+    let (inserted_text, mut cursor_position) = lib::initialize_text_buffer(&file_name)?;
 
     let mut show_cursor = true;
 
@@ -76,8 +77,13 @@ fn main() -> std::io::Result<()> {
                         ..
                     } => {
                         let mut text = inserted_text.lock().unwrap();
-                        text.push(c);
-                        cursor_position.0 += 1;
+
+                        let index = lib::position_to_index(&text, cursor_position);
+
+                        text.insert(index, c);
+
+                        cursor_position.0 += 1; // move cursor to right
+
                     }
 
                     event::KeyEvent {
@@ -96,15 +102,19 @@ fn main() -> std::io::Result<()> {
                     } => {
                         let mut text = inserted_text.lock().unwrap();
                         if !text.is_empty() {
-                            text.pop();
-                            if cursor_position.0 > 0 {
-                                cursor_position.0 -= 1;
-                            } else if  cursor_position.1 > 0 {
-                                let lines: Vec<&str> = text.split('\n').collect();
-                                if let Some(prev_line) = lines.get(cursor_position.1 as usize - 1) {
-                                    cursor_position.1 -= 1;
-                                    cursor_position.0 = prev_line.len() as u16; // Set cursor to the end of the previous line
+                            if cursor_position.0 > 0 || cursor_position.1 >0 {
+                                let index = lib::position_to_index(&text,  cursor_position);
+                                if index > 0 {
+                                    text.remove(index - 1);
                                 }
+                                // Move cursor left
+                                if cursor_position.0 > 0 {
+                                    cursor_position.0 -= 1;
+                                } else if cursor_position.1 > 0 {
+                                    cursor_position.1 -= 1;
+                                    cursor_position.0 = lib::line_length(&text, cursor_position.1 as usize);
+                                }
+
                             }
                         }
                     }
@@ -114,7 +124,8 @@ fn main() -> std::io::Result<()> {
                         ..
                     } => {
                         let mut text = inserted_text.lock().unwrap();
-                        text.push('\n');
+                        let index = lib::position_to_index(&text, cursor_position);
+                        text.insert(index, '\n');
                         cursor_position.0 = 0;
                         cursor_position.1 += 1;
                     }
@@ -133,6 +144,57 @@ fn main() -> std::io::Result<()> {
                         let mut file = File::create(&file_name)?;
                         file.write_all(text.as_bytes())?;
                         break;
+                    }
+
+                    event::KeyEvent {
+                        code: KeyCode::Left, ..
+                    } => {
+                        if cursor_position.0 > 0 {
+                            cursor_position.0 -= 1;
+                        } else if  cursor_position.1 > 0 {
+                            let text = inserted_text.lock().unwrap();
+                            let lines: Vec<&str> = text.split('\n').collect();
+                            if let Some(prev_line) = lines.get(cursor_position.1 as usize - 1) {
+                                cursor_position.1 -= 1;
+                                cursor_position.0 = prev_line.len() as u16; // Set cursor to the end of the previous line
+                            }
+                        }
+
+                    }
+
+                    event::KeyEvent {
+                        code: KeyCode::Right, ..
+                    } => {
+                        let text = inserted_text.lock().unwrap();
+                        if cursor_position.0 < text.len() as u16 {
+                            cursor_position.0 += 1;
+                        } else if cursor_position.1 < lib::total_lines(&text) as u16 - 1 {
+                            cursor_position.1 += 1;
+                            cursor_position.0 = 0;
+                        }
+
+                    }
+                    event::KeyEvent {
+                        code: KeyCode::Up,
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    } => {
+                        if cursor_position.1 > 0 {
+                            cursor_position.1 -= 1;
+                            let text = inserted_text.lock().unwrap();
+                            cursor_position.0 = cursor_position.0.min(lib::line_length(&text, cursor_position.1 as usize));
+                        }
+                    }
+                    event::KeyEvent {
+                        code: KeyCode::Down,
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    } => {
+                        let text = inserted_text.lock().unwrap();
+                        if cursor_position.1 < lib::total_lines(&text) as u16 - 1 {
+                            cursor_position.1 += 1;
+                            cursor_position.0 = cursor_position.0.min(lib::line_length(&text, cursor_position.1 as usize));
+                        }
                     }
 
                     _ => {}
