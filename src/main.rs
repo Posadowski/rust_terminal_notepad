@@ -1,6 +1,12 @@
-use rust_terminal_notepad::initialize_text_buffer;
-use std::fs::File;
-use std::io::Write;
+use rust_terminal_notepad::*;
+
+use std::{
+    fs::File,
+    io::Write,
+    sync::mpsc,
+    thread,
+    time::Duration,
+};
 
 use crossterm::event::KeyEventKind;
 use crossterm::{
@@ -27,6 +33,17 @@ fn main() -> std::io::Result<()> {
     // Initialize text buffer and cursor position
     let (inserted_text, mut cursor_position) = initialize_text_buffer(&file_name)?;
 
+    let mut show_cursor = true;
+
+    // Setup communication channel for blinking cursor
+    let (tx, rx) = mpsc::channel();
+
+    // Start a thread for blinking the cursor
+    let _blink_thread = thread::spawn(move || loop {
+        tx.send(()).unwrap();
+        thread::sleep(Duration::from_millis(500));
+    });
+
     loop {
         // clear screen and show buffer
         {
@@ -39,7 +56,17 @@ fn main() -> std::io::Result<()> {
                 Print(&*text),
                 cursor::MoveTo(cursor_position.0, cursor_position.1),
             )?;
+            if show_cursor {
+                execute!(stdout, cursor::Show)?;
+            } else {
+                execute!(stdout, cursor::Hide)?;
+            }
         }
+
+        if let Ok(_) = rx.try_recv() {
+            show_cursor = !show_cursor;
+        }
+
         if let Event::Key(key_event) = event::read()? {
             if key_event.kind != KeyEventKind::Release {
                 // skip releasing the button
@@ -50,8 +77,13 @@ fn main() -> std::io::Result<()> {
                         ..
                     } => {
                         let mut text = inserted_text.lock().unwrap();
-                        text.push(c);
-                        cursor_position.0 += 1;
+
+                        let index = position_to_index(&text, cursor_position);
+
+                        text.insert(index, c);
+
+                        cursor_position.0 += 1; // move cursor to right
+
                     }
 
                     event::KeyEvent {
@@ -70,9 +102,19 @@ fn main() -> std::io::Result<()> {
                     } => {
                         let mut text = inserted_text.lock().unwrap();
                         if !text.is_empty() {
-                            text.pop();
-                            if cursor_position.0 > 0 {
-                                cursor_position.0 -= 1;
+                            if cursor_position.0 > 0 || cursor_position.1 >0 {
+                                let index = position_to_index(&text,  cursor_position);
+                                if index > 0 {
+                                    text.remove(index - 1);
+                                }
+                                // Move cursor left
+                                if cursor_position.0 > 0 {
+                                    cursor_position.0 -= 1;
+                                } else if cursor_position.1 > 0 {
+                                    cursor_position.1 -= 1;
+                                    cursor_position.0 = line_length(&text, cursor_position.1 as usize);
+                                }
+
                             }
                         }
                     }
@@ -82,7 +124,8 @@ fn main() -> std::io::Result<()> {
                         ..
                     } => {
                         let mut text = inserted_text.lock().unwrap();
-                        text.push('\n');
+                        let index = position_to_index(&text, cursor_position);
+                        text.insert(index, '\n');
                         cursor_position.0 = 0;
                         cursor_position.1 += 1;
                     }
@@ -101,6 +144,57 @@ fn main() -> std::io::Result<()> {
                         let mut file = File::create(&file_name)?;
                         file.write_all(text.as_bytes())?;
                         break;
+                    }
+
+                    event::KeyEvent {
+                        code: KeyCode::Left, ..
+                    } => {
+                        if cursor_position.0 > 0 {
+                            cursor_position.0 -= 1;
+                        } else if  cursor_position.1 > 0 {
+                            let text = inserted_text.lock().unwrap();
+                            let lines: Vec<&str> = text.split('\n').collect();
+                            if let Some(prev_line) = lines.get(cursor_position.1 as usize - 1) {
+                                cursor_position.1 -= 1;
+                                cursor_position.0 = prev_line.len() as u16; // Set cursor to the end of the previous line
+                            }
+                        }
+
+                    }
+
+                    event::KeyEvent {
+                        code: KeyCode::Right, ..
+                    } => {
+                        let text = inserted_text.lock().unwrap();
+                        if cursor_position.0 < text.len() as u16 {
+                            cursor_position.0 += 1;
+                        } else if cursor_position.1 < total_lines(&text) as u16 - 1 {
+                            cursor_position.1 += 1;
+                            cursor_position.0 = 0;
+                        }
+
+                    }
+                    event::KeyEvent {
+                        code: KeyCode::Up,
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    } => {
+                        if cursor_position.1 > 0 {
+                            cursor_position.1 -= 1;
+                            let text = inserted_text.lock().unwrap();
+                            cursor_position.0 = cursor_position.0.min(line_length(&text, cursor_position.1 as usize));
+                        }
+                    }
+                    event::KeyEvent {
+                        code: KeyCode::Down,
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    } => {
+                        let text = inserted_text.lock().unwrap();
+                        if cursor_position.1 < total_lines(&text) as u16 - 1 {
+                            cursor_position.1 += 1;
+                            cursor_position.0 = cursor_position.0.min(line_length(&text, cursor_position.1 as usize));
+                        }
                     }
 
                     _ => {}
