@@ -35,14 +35,23 @@ pub fn  position_to_index(text: &str, cursor: (u16, u16)) -> usize {
     let (x, y) = cursor;
     let mut line = 0;
     let mut index = 0;
-
-    for (_i, ch) in text.chars().enumerate() {
+    for (i, ch) in text.chars().enumerate() {
         if line == y {
-            return index + x as usize;
+            if i >= text.len() {
+                return index;
+            }
+            if index + x as usize <= text.len() {
+                return index + x as usize;
+            } else {
+                return text.len();
+            }
         }
         index += ch.len_utf8(); // Jump over the appropriate length of the sign
         if ch == '\n' {
             line += 1;
+        }
+        if line > y {
+            break;
         }
     }
     index // By default it returns the end of text
