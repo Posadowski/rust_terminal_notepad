@@ -1,4 +1,4 @@
-mod lib;
+use rust_terminal_notepad::*;
 
 use std::{
     fs::File,
@@ -31,7 +31,7 @@ fn main() -> std::io::Result<()> {
     execute!(stdout, terminal::EnterAlternateScreen, cursor::Hide)?;
 
     // Initialize text buffer and cursor position
-    let (inserted_text, mut cursor_position) = lib::initialize_text_buffer(&file_name)?;
+    let (inserted_text, mut cursor_position) = initialize_text_buffer(&file_name)?;
 
     let mut show_cursor = true;
 
@@ -78,7 +78,7 @@ fn main() -> std::io::Result<()> {
                     } => {
                         let mut text = inserted_text.lock().unwrap();
 
-                        let index = lib::position_to_index(&text, cursor_position);
+                        let index = position_to_index(&text, cursor_position);
 
                         text.insert(index, c);
 
@@ -103,7 +103,7 @@ fn main() -> std::io::Result<()> {
                         let mut text = inserted_text.lock().unwrap();
                         if !text.is_empty() {
                             if cursor_position.0 > 0 || cursor_position.1 >0 {
-                                let index = lib::position_to_index(&text,  cursor_position);
+                                let index = position_to_index(&text,  cursor_position);
                                 if index > 0 {
                                     text.remove(index - 1);
                                 }
@@ -112,7 +112,7 @@ fn main() -> std::io::Result<()> {
                                     cursor_position.0 -= 1;
                                 } else if cursor_position.1 > 0 {
                                     cursor_position.1 -= 1;
-                                    cursor_position.0 = lib::line_length(&text, cursor_position.1 as usize);
+                                    cursor_position.0 = line_length(&text, cursor_position.1 as usize);
                                 }
 
                             }
@@ -124,7 +124,7 @@ fn main() -> std::io::Result<()> {
                         ..
                     } => {
                         let mut text = inserted_text.lock().unwrap();
-                        let index = lib::position_to_index(&text, cursor_position);
+                        let index = position_to_index(&text, cursor_position);
                         text.insert(index, '\n');
                         cursor_position.0 = 0;
                         cursor_position.1 += 1;
@@ -168,7 +168,7 @@ fn main() -> std::io::Result<()> {
                         let text = inserted_text.lock().unwrap();
                         if cursor_position.0 < text.len() as u16 {
                             cursor_position.0 += 1;
-                        } else if cursor_position.1 < lib::total_lines(&text) as u16 - 1 {
+                        } else if cursor_position.1 < total_lines(&text) as u16 - 1 {
                             cursor_position.1 += 1;
                             cursor_position.0 = 0;
                         }
@@ -182,7 +182,7 @@ fn main() -> std::io::Result<()> {
                         if cursor_position.1 > 0 {
                             cursor_position.1 -= 1;
                             let text = inserted_text.lock().unwrap();
-                            cursor_position.0 = cursor_position.0.min(lib::line_length(&text, cursor_position.1 as usize));
+                            cursor_position.0 = cursor_position.0.min(line_length(&text, cursor_position.1 as usize));
                         }
                     }
                     event::KeyEvent {
@@ -191,9 +191,9 @@ fn main() -> std::io::Result<()> {
                         ..
                     } => {
                         let text = inserted_text.lock().unwrap();
-                        if cursor_position.1 < lib::total_lines(&text) as u16 - 1 {
+                        if cursor_position.1 < total_lines(&text) as u16 - 1 {
                             cursor_position.1 += 1;
-                            cursor_position.0 = cursor_position.0.min(lib::line_length(&text, cursor_position.1 as usize));
+                            cursor_position.0 = cursor_position.0.min(line_length(&text, cursor_position.1 as usize));
                         }
                     }
 
