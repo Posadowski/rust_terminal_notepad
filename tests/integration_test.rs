@@ -570,7 +570,7 @@ fn test_read_file() -> std::io::Result<()> {
 
 #[test]
 fn test_position_to_index() {
-    use rust_terminal_notepad::position_to_index;;
+    use rust_terminal_notepad::position_to_index;
     let text = "some string\nsome line";
 
     // First Line Position Test
